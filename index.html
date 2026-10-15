@@ -90,6 +90,8 @@ dl.kv { display: grid; grid-template-columns: 74px minmax(0,1fr); gap: 4px 8px; 
 .hm .lbl.r { left: 13px; } .hm .lbl.l { right: 13px; }
 .hm.dim { opacity: .3; }
 .leaflet-container { font-family: var(--f-body); }
+.osm-tiles { filter: saturate(.75) contrast(.95); }
+@media (prefers-color-scheme: dark) { .osm-tiles { filter: invert(1) hue-rotate(180deg) brightness(.9) contrast(.9) saturate(.5); } }
 .distlbl { background: var(--accent); color: #fff; border: 0; font: 600 13px var(--f-display); box-shadow: none; }
 .distlbl::before { display: none; }
 </style>
@@ -196,12 +198,11 @@ const eligible = h => SCEN[scen].test(h);
 // Map
 const map = L.map('map', { zoomControl: true, attributionControl: true });
 const dark = matchMedia('(prefers-color-scheme: dark)');
-const tileUrl = () => `https://{s}.basemaps.cartocdn.com/${dark.matches ? 'dark_all' : 'rastertiles/voyager'}/{z}/{x}/{y}{r}.png`;
-const tiles = L.tileLayer(tileUrl(), {
-  maxZoom: 19, subdomains: 'abcd',
-  attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  maxZoom: 19, className: 'osm-tiles',
+  attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
 }).addTo(map);
-dark.addEventListener?.('change', () => { tiles.setUrl(tileUrl()); refresh(); });
+dark.addEventListener?.('change', () => refresh());
 
 const VALLEY = L.latLngBounds([35.965, -115.33], [36.30, -114.83]);
 const fitValley = () => map.fitBounds(VALLEY, { padding: [10, 10] });
