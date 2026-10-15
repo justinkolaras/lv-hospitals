@@ -1,0 +1,318 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Las Vegas Valley Hospitals</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+:root {
+  --bg: #eceeed; --surface: #f8f9f8; --line: #cfd5d1; --ink: #1b2320; --muted: #57635d;
+  --trauma: #c42f28; --nir: #6a3c9f; --stroke: #9d86c6; --other: #7d8a84; --peds: #1d8584; --burn: #d06a14;
+  --accent: #0d68b0; --accent-soft: rgba(13,104,176,.12); --halo: #ffffff;
+  --f-display: "Barlow Condensed", "Arial Narrow", sans-serif;
+  --f-body: "Barlow", "Segoe UI", system-ui, sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) { :root {
+  --bg: #0f1417; --surface: #151c20; --line: #273238; --ink: #e2e8e5; --muted: #8e9a94;
+  --trauma: #ff5b52; --nir: #a97de2; --stroke: #8270a8; --other: #6c7b75; --peds: #3db8b3; --burn: #f08b3d;
+  --accent: #4aa6ff; --accent-soft: rgba(74,166,255,.16); --halo: #0f1417; color-scheme: dark } }
+
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body { background: var(--bg); color: var(--ink); font: 15px/1.45 var(--f-body); display: grid; grid-template-rows: auto 1fr; }
+header { padding: 12px max(16px, env(safe-area-inset-left)) 10px; display: flex; flex-wrap: wrap; gap: 4px 18px; align-items: baseline; justify-content: space-between; border-bottom: 1px solid var(--line); background: var(--surface); }
+h1 { margin: 0; font: 700 clamp(22px, 3.4vw, 30px)/1.1 var(--f-display); text-transform: uppercase; letter-spacing: .01em; }
+h1 span { color: var(--trauma); }
+header p { margin: 0; font-size: 13.5px; color: var(--muted); max-width: 70ch; }
+
+main { display: grid; grid-template-columns: minmax(0,1fr) 380px; min-height: 0; }
+#map { min-height: 0; height: 100%; background: var(--bg); }
+aside { background: var(--surface); border-left: 1px solid var(--line); overflow-y: auto; min-height: 0; }
+@media (max-width: 860px) {
+  body { grid-template-rows: auto auto; height: auto; }
+  main { grid-template-columns: 1fr; }
+  #map { height: 58vh; }
+  aside { border-left: 0; border-top: 1px solid var(--line); overflow: visible; }
+}
+
+.sec { padding: 14px 16px; border-bottom: 1px solid var(--line); display: grid; gap: 9px; }
+.eyebrow { font: 600 12px var(--f-display); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+select { font: 500 15px var(--f-body); width: 100%; padding: 9px 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); }
+.rule { font-size: 14px; background: var(--accent-soft); border-radius: 8px; padding: 9px 11px; }
+.rule[hidden] { display: none; }
+.btns { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.btn { font: 600 13px var(--f-display); letter-spacing: .05em; text-transform: uppercase; text-decoration: none; border: 1px solid var(--line); background: var(--bg); color: var(--accent); border-radius: 6px; padding: 6px 10px; cursor: pointer; }
+.btn:hover { border-color: var(--accent); }
+.btn[hidden] { display: none; }
+.pinstate { font-size: 13px; color: var(--muted); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.legend { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12.5px; color: var(--muted); }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 5px; vertical-align: -1px; }
+
+ul.list { list-style: none; margin: 0; padding: 0; }
+.row { border-top: 1px solid var(--line); }
+.row:first-child { border-top: 0; }
+.rowbtn { width: 100%; text-align: left; background: none; border: 0; color: inherit; font: inherit; cursor: pointer; padding: 9px 6px; display: grid; grid-template-columns: 12px minmax(0,1fr) auto; gap: 10px; align-items: center; border-radius: 6px; }
+.rowbtn:hover, .row.open .rowbtn { background: var(--accent-soft); }
+.row.dim .rowbtn { opacity: .42; }
+.dotk { width: 12px; height: 12px; border-radius: 50%; }
+.rname { font: 600 17px var(--f-display); display: block; }
+.rmeta { font-size: 12.5px; color: var(--muted); display: block; }
+.rdist { font: 500 12px var(--f-mono); color: var(--muted); white-space: nowrap; }
+.code { font: 500 11px var(--f-mono); color: var(--muted); border: 1px solid var(--line); border-radius: 4px; padding: 0 4px; margin-left: 6px; vertical-align: 2px; }
+.detail { padding: 4px 6px 14px 28px; display: grid; gap: 9px; font-size: 14px; }
+.tags { display: flex; flex-wrap: wrap; gap: 5px; }
+.tag { font: 600 12px var(--f-display); letter-spacing: .05em; text-transform: uppercase; padding: 2px 7px; border-radius: 4px; color: #fff; }
+.t-trauma { background: var(--trauma); } .t-nir { background: var(--nir); } .t-stroke { background: var(--stroke); }
+.t-peds { background: var(--peds); } .t-burn { background: var(--burn); } .t-none { background: var(--other); }
+dl.kv { display: grid; grid-template-columns: 74px minmax(0,1fr); gap: 4px 8px; margin: 0; }
+.kv dt { color: var(--muted); font-size: 12.5px; } .kv dd { margin: 0; overflow-wrap: anywhere; }
+.mono { font: 500 13px var(--f-mono); }
+.notes { margin: 0; padding-left: 18px; }
+.foot { padding: 14px 16px 20px; font-size: 12.5px; color: var(--muted); display: grid; gap: 6px; }
+.foot a { color: var(--accent); }
+
+/* Map markers */
+.hm { position: relative; }
+.hm .dot { position: absolute; left: -8px; top: -8px; width: 16px; height: 16px; border-radius: 50%; background: var(--c); border: 2.5px solid var(--halo); box-shadow: 0 1px 3px rgba(0,0,0,.35); }
+.hm.sel .dot { left: -11px; top: -11px; width: 22px; height: 22px; outline: 3px solid var(--accent); }
+.hm .pip { position: absolute; width: 8px; height: 8px; border-radius: 50%; border: 1.5px solid var(--halo); top: -14px; }
+.hm .pip.p { left: 4px; background: var(--peds); } .hm .pip.b { left: -12px; background: var(--burn); }
+.hm .lbl { position: absolute; top: -9px; white-space: nowrap; font: 600 14px var(--f-display); color: var(--ink);
+  text-shadow: 0 0 3px var(--halo), 0 0 3px var(--halo), 0 0 3px var(--halo), 0 0 3px var(--halo); }
+.hm .lbl.r { left: 13px; } .hm .lbl.l { right: 13px; }
+.hm.dim { opacity: .3; }
+.leaflet-container { font-family: var(--f-body); }
+.distlbl { background: var(--accent); color: #fff; border: 0; font: 600 13px var(--f-display); box-shadow: none; }
+.distlbl::before { display: none; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Las Vegas Valley <span>Hospitals</span></h1>
+  <p>All SNHD receiving hospitals and their destination designations. Pick a patient type to see where they can go, or click the map to drop a pin and rank hospitals by distance.</p>
+</header>
+<main>
+  <div id="map" aria-label="Map of Las Vegas Valley hospitals"></div>
+  <aside>
+    <div class="sec">
+      <label class="eyebrow" for="scenario">Where does this patient go?</label>
+      <select id="scenario">
+        <option value="all">Show all hospitals</option>
+        <optgroup label="Trauma (TFTC)">
+          <option value="adultRed">Adult · Red criteria</option>
+          <option value="adultYellow">Adult · Yellow criteria</option>
+          <option value="pedsRed">Peds (&lt;18) · Red criteria</option>
+          <option value="pedsYellow">Peds (&lt;18) · Yellow criteria</option>
+        </optgroup>
+        <optgroup label="Medical">
+          <option value="strokeLvo">Stroke · RACE 5 or higher</option>
+          <option value="stroke">Stroke · RACE 1–4</option>
+          <option value="burn">Burn center criteria</option>
+          <option value="pedsMed">Pediatric patient (&lt;18), non-trauma</option>
+          <option value="saMinor">Sexual assault, under 18</option>
+        </optgroup>
+      </select>
+      <div class="rule" id="rule" hidden></div>
+      <div class="pinstate" id="pinstate">Click the map to drop a pin, or use your location.</div>
+      <div class="btns">
+        <button class="btn" id="locate">Use my location</button>
+        <button class="btn" id="clearpin" hidden>Clear pin</button>
+        <button class="btn" id="fit">Show whole valley</button>
+      </div>
+      <div class="legend">
+        <span><i style="background:var(--trauma)"></i>Trauma center</span>
+        <span><i style="background:var(--nir)"></i>LVO/NIR stroke</span>
+        <span><i style="background:var(--stroke)"></i>Stroke center</span>
+        <span><i style="background:var(--other)"></i>ED only</span>
+        <span><i style="background:var(--burn)"></i>Burn (small dot)</span>
+        <span><i style="background:var(--peds)"></i>Peds dest. (small dot)</span>
+      </div>
+    </div>
+    <div class="sec">
+      <div class="eyebrow" id="listhead">Hospitals</div>
+      <ul class="list" id="list"></ul>
+    </div>
+    <div class="foot">
+      <span>Designations: <a href="https://media.southernnevadahealthdistrict.org/download/ems/ems-protocol-manual.pdf" target="_blank" rel="noopener">Clark County EMS Protocols (July 1, 2026)</a>, <a href="https://media.southernnevadahealthdistrict.org/download/ems/receiving-hospital-directory.pdf" target="_blank" rel="noopener">SNHD Receiving Hospital Directory (9/22/2026)</a>, <a href="https://www.southernnevadahealthdistrict.org/programs/emergency-medical-services-trauma-system/southern-nevada-trauma-system/" target="_blank" rel="noopener">SNHD Trauma System</a>. Phones are the directory's listings.</span>
+      <span>Marker positions are approximate (within a few blocks); use "Directions" for the exact address. Distances are straight-line. Among eligible trauma centers, SNHD catchment areas decide. Can't ventilate = closest ED.</span>
+    </div>
+  </aside>
+</main>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+<script>
+const H = [
+  { id:'umc', name:'UMC', full:'University Medical Center', code:'H-4', area:'Central / Medical District', addr:'1800 W Charleston Blvd, Las Vegas, NV 89102', phone:'(702) 383-2000', ll:[36.1588,-115.1688], trauma:'I', pedsTrauma:true, pedsYellow:true, burn:true, stroke:'nir', peds:true, side:'l',
+    notes:['Only pediatric trauma center in the valley (Pediatric Level II)','Burn center'] },
+  { id:'valley', name:'Valley', full:'Valley Hospital Medical Center', code:'H-9', area:'Central / Medical District', addr:'620 Shadow Ln, Las Vegas, NV 89106', phone:'(702) 388-4506', ll:[36.1640,-115.1660], stroke:'nir', side:'r' },
+  { id:'sunrise', name:'Sunrise', full:'Sunrise Hospital & Medical Center', code:'H-6', area:'Central / Maryland Pkwy', addr:'3186 S Maryland Pkwy, Las Vegas, NV 89109', phone:'(702) 961-7805', ll:[36.1338,-115.1365], trauma:'I', pedsYellow:true, burn:true, stroke:'nir', peds:true, side:'r',
+    notes:['Level I trauma since April 2026 (was Level II)','Burn center','Sexual assault patients under 18','Sunrise Children\'s Hospital on campus'] },
+  { id:'summerlin', name:'Summerlin', full:'Summerlin Hospital Medical Center', code:'H-1', area:'West / Summerlin', addr:'657 N Town Center Dr, Las Vegas, NV 89144', phone:'(702) 233-7033', ll:[36.1790,-115.3095], stroke:'yes', peds:true, side:'r' },
+  { id:'mtnview', name:'MountainView', full:'MountainView Hospital', code:'H-11', area:'Northwest', addr:'3100 N Tenaya Way, Las Vegas, NV 89128', phone:'(702) 962-7800', ll:[36.2167,-115.2480], stroke:'yes', side:'r' },
+  { id:'centennial', name:'Centennial Hills', full:'Centennial Hills Hospital', code:'H-19', area:'Far northwest', addr:'6900 N Durango Dr, Las Vegas, NV 89149', phone:'(702) 629-1211', ll:[36.2877,-115.2875], stroke:'nir', side:'r' },
+  { id:'shills', name:'Southern Hills', full:'Southern Hills Hospital', code:'H-16', area:'Southwest', addr:'9300 W Sunset Rd, Las Vegas, NV 89148', phone:'(702) 916-7800', ll:[36.0718,-115.2985], stroke:'nir', side:'l' },
+  { id:'svalley', name:'Spring Valley', full:'Spring Valley Hospital Medical Center', code:'H-15', area:'Southwest', addr:'5400 S Rainbow Blvd, Las Vegas, NV 89118', phone:'(702) 853-3611', ll:[36.0946,-115.2427], stroke:'nir', side:'r' },
+  { id:'sanmartin', name:'San Martin', full:'St. Rose Dominican – San Martin', code:'H-73', area:'Southwest', addr:'8280 W Warm Springs Rd, Las Vegas, NV 89113', phone:'(702) 492-8600', ll:[36.0563,-115.2795], stroke:'yes', side:'r' },
+  { id:'siena', name:'St. Rose Siena', full:'St. Rose Dominican – Siena Campus', code:'H-72', area:'Henderson', addr:'3001 St. Rose Pkwy, Henderson, NV 89052', phone:'(702) 616-6104', ll:[36.0035,-115.1150], trauma:'III', pedsYellow:true, stroke:'nir', peds:true, side:'r',
+    notes:['Level III adult trauma; peds Yellow OK'] },
+  { id:'whenderson', name:'West Henderson', full:'West Henderson Hospital', code:'H-28', area:'Henderson (west)', addr:'1155 Raiders Way, Henderson, NV 89052', phone:'(725) 235-2100', ll:[35.9955,-115.1590], stroke:'yes', side:'l' },
+  { id:'henderson', name:'Henderson Hospital', full:'Henderson Hospital', code:'H-18', area:'Henderson (east)', addr:'1050 W Galleria Dr, Henderson, NV 89011', phone:'(702) 963-7100', ll:[36.0588,-114.9783], stroke:'nir', side:'r' },
+  { id:'nvista', name:'North Vista', full:'North Vista Hospital', code:'H-5', area:'North Las Vegas', addr:'1409 E Lake Mead Blvd, North Las Vegas, NV 89030', phone:'(702) 649-7711', ll:[36.1955,-115.1250], side:'r' },
+  { id:'mommc', name:'Mike O\'Callaghan', full:'Mike O\'Callaghan Military Medical Center', code:'H-3', area:'Nellis AFB', addr:'4700 N Las Vegas Blvd, Nellis AFB, NV 89191', phone:'(702) 653-2344', ll:[36.2425,-115.0470], trauma:'III', side:'r',
+    notes:['Level III adult trauma (military hospital on Nellis AFB)'] },
+  { id:'boulder', name:'Boulder City', full:'Boulder City Hospital', code:'H-8', area:'Boulder City', addr:'901 Adams Blvd, Boulder City, NV 89005', phone:'(702) 293-4111', ll:[35.9770,-114.8395], side:'l' },
+  { id:'mesaview', name:'Mesa View', full:'Mesa View Regional Hospital', code:'H-75', area:'Mesquite (~80 mi NE)', addr:'1299 Bertha Howe Ave, Mesquite, NV 89027', phone:'(702) 346-8040', ll:[36.8060,-114.0950], side:'r', far:true }
+];
+
+const SCEN = {
+  all: { test: () => true },
+  adultRed: { test: h => h.trauma === 'I', rule: 'Red (abnormal mental status/vitals or serious injury pattern) → Level I trauma center. Catchment area decides between UMC and Sunrise.' },
+  adultYellow: { test: h => !!h.trauma, rule: 'Yellow (mechanism or EMS judgment) → any trauma center, Level III included. Catchment area decides which one.' },
+  pedsRed: { test: h => !!h.pedsTrauma, rule: 'Under 18 meeting Red criteria → UMC, the only pediatric trauma center.' },
+  pedsYellow: { test: h => !!h.pedsYellow, rule: 'Under 18 meeting Yellow criteria only → UMC, Sunrise or St. Rose Siena ("Peds Yellow OK").' },
+  strokeLvo: { test: h => h.stroke === 'nir', rule: 'RACE 5+ (suspected LVO), BGL 60–400 → NIR-capable center for thrombectomy. Scene time under 10 min; radio the receiving facility.' },
+  stroke: { test: h => !!h.stroke, rule: 'RACE 1–4, BGL 60–400 → any approved stroke center. Document last known normal and a witness phone number.' },
+  burn: { test: h => !!h.burn, rule: '2° over 10% BSA, any 3°, face/hands/feet/genitals/major joints, electrical, chemical, circumferential, inhalation, or burns with trauma → closest burn center.' },
+  pedsMed: { test: h => !!h.peds, rule: 'Under 18 (transport purposes) → a pediatric destination hospital. Radio contact required for all pediatric patients.' },
+  saMinor: { test: h => h.id === 'sunrise', rule: 'Sexual assault victims under 18 → Sunrise Hospital.' }
+};
+
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const colorVar = h => h.trauma ? '--trauma' : h.stroke === 'nir' ? '--nir' : h.stroke ? '--stroke' : '--other';
+const esc = s => s.replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
+
+let scen = 'all', selected = null, pin = null, pinMarker = null, pinLine = null;
+try { const s = localStorage.getItem('lvh-scen'); if (s && SCEN[s]) scen = s; } catch (e) {}
+const eligible = h => SCEN[scen].test(h);
+
+// Map
+const map = L.map('map', { zoomControl: true, attributionControl: true });
+const dark = matchMedia('(prefers-color-scheme: dark)');
+const tileUrl = () => `https://{s}.basemaps.cartocdn.com/${dark.matches ? 'dark_all' : 'rastertiles/voyager'}/{z}/{x}/{y}{r}.png`;
+const tiles = L.tileLayer(tileUrl(), {
+  maxZoom: 19, subdomains: 'abcd',
+  attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+}).addTo(map);
+dark.addEventListener?.('change', () => { tiles.setUrl(tileUrl()); refresh(); });
+
+const VALLEY = L.latLngBounds([35.965, -115.33], [36.30, -114.83]);
+const fitValley = () => map.fitBounds(VALLEY, { padding: [10, 10] });
+fitValley();
+
+const markers = {};
+function icon(h) {
+  const cls = ['hm', eligible(h) ? '' : 'dim', h.id === selected ? 'sel' : ''].join(' ');
+  return L.divIcon({ className: '', iconSize: [0, 0], html:
+    `<div class="${cls}" style="--c:var(${colorVar(h)})"><span class="dot"></span>${h.burn ? '<span class="pip b"></span>' : ''}${h.peds ? '<span class="pip p"></span>' : ''}<span class="lbl ${h.side}">${esc(h.name)}</span></div>` });
+}
+H.forEach(h => {
+  const m = L.marker(h.ll, { icon: icon(h), title: h.full, keyboard: true, riseOnHover: true }).addTo(map);
+  m.on('click', () => select(h.id, false));
+  markers[h.id] = m;
+});
+
+map.on('click', e => setPin([e.latlng.lat, e.latlng.lng]));
+
+function miles(a, b) { return map.distance(a, b) / 1609.344; }
+
+function drawPinLine() {
+  if (pinLine) { map.removeLayer(pinLine); pinLine = null; }
+  if (!pin) return;
+  const near = H.filter(h => eligible(h)).map(h => [h, miles(pin, h.ll)]).sort((a, b) => a[1] - b[1])[0];
+  if (!near) return;
+  pinLine = L.polyline([pin, near[0].ll], { color: css('--accent'), weight: 3, dashArray: '6 6' }).addTo(map)
+    .bindTooltip(`${near[1].toFixed(1)} mi to ${near[0].name}`, { permanent: true, direction: 'center', className: 'distlbl' });
+}
+
+function setPin(p) {
+  pin = p;
+  if (pinMarker) { map.removeLayer(pinMarker); pinMarker = null; }
+  if (pin) pinMarker = L.circleMarker(pin, { radius: 8, color: '#fff', weight: 3, fillColor: css('--accent'), fillOpacity: 1 }).addTo(map);
+  document.getElementById('clearpin').hidden = !pin;
+  document.getElementById('pinstate').textContent = pin ? 'Hospitals sorted by straight-line distance from your pin.' : 'Click the map to drop a pin, or use your location.';
+  drawPinLine(); renderList();
+}
+
+function refresh() {
+  H.forEach(h => { markers[h.id].setIcon(icon(h)); markers[h.id].setZIndexOffset(eligible(h) ? 500 : 0); });
+  drawPinLine(); renderList();
+  const r = document.getElementById('rule'); r.hidden = !SCEN[scen].rule; r.textContent = SCEN[scen].rule || '';
+}
+
+function tags(h) {
+  const t = [];
+  if (h.trauma) t.push(['t-trauma', `Level ${h.trauma} trauma`]);
+  if (h.pedsTrauma) t.push(['t-trauma', 'Peds trauma L-II']); else if (h.pedsYellow) t.push(['t-trauma', 'Peds Yellow OK']);
+  if (h.burn) t.push(['t-burn', 'Burn center']);
+  if (h.stroke === 'nir') t.push(['t-nir', 'LVO / NIR stroke']); else if (h.stroke) t.push(['t-stroke', 'Stroke center']);
+  if (h.peds) t.push(['t-peds', 'Peds destination']);
+  if (!t.length) t.push(['t-none', 'Emergency dept only']);
+  return t;
+}
+
+function renderList() {
+  const rows = H.map(h => ({ h, on: eligible(h), d: pin ? miles(pin, h.ll) : null }));
+  rows.sort((a, b) => (b.on - a.on) || (a.d != null ? a.d - b.d : (a.h.far - b.h.far)));
+  const n = rows.filter(r => r.on).length;
+  document.getElementById('listhead').textContent = scen === 'all' ? `Hospitals · ${H.length}` : `${n} eligible · ${H.length - n} other`;
+  document.getElementById('list').innerHTML = rows.map(({ h, on, d }) => {
+    const open = h.id === selected, q = encodeURIComponent(`${h.full}, ${h.addr}`);
+    return `<li class="row${on ? '' : ' dim'}${open ? ' open' : ''}" data-row="${h.id}">
+      <button class="rowbtn" aria-expanded="${open}" data-pick="${h.id}">
+        <span class="dotk" style="background:var(${colorVar(h)})"></span>
+        <span><span class="rname">${esc(h.name)}<span class="code">${h.code}</span></span><span class="rmeta">${esc(h.area)}</span></span>
+        <span class="rdist">${d != null ? d.toFixed(1) + ' mi' : ''}</span>
+      </button>
+      ${open ? `<div class="detail">
+        <div class="tags">${tags(h).map(([c, t]) => `<span class="tag ${c}">${t}</span>`).join('')}</div>
+        <dl class="kv"><dt>Name</dt><dd>${esc(h.full)}</dd><dt>Address</dt><dd>${esc(h.addr)}</dd><dt>Phone</dt><dd><a class="mono" href="tel:${h.phone.replace(/\D/g, '')}">${h.phone}</a></dd><dt>SNHD code</dt><dd class="mono">${h.code}</dd></dl>
+        ${h.notes ? `<ul class="notes">${h.notes.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}
+        <div class="btns"><a class="btn" href="https://www.google.com/maps/dir/?api=1&destination=${q}" target="_blank" rel="noopener">Directions</a><a class="btn" href="https://www.google.com/maps/search/?api=1&query=${q}" target="_blank" rel="noopener">Google Maps</a></div>
+      </div>` : ''}
+    </li>`;
+  }).join('');
+}
+
+function select(id, fly) {
+  selected = selected === id && !fly ? null : id;
+  const h = H.find(x => x.id === id);
+  if (fly && h) map.flyTo(h.ll, Math.max(map.getZoom(), 13), { duration: .6 });
+  refresh();
+  const row = document.querySelector(`[data-row="${id}"]`);
+  if (row && selected) row.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+}
+
+document.getElementById('list').addEventListener('click', e => {
+  const b = e.target.closest('[data-pick]'); if (!b) return;
+  const id = b.dataset.pick;
+  if (selected === id) { selected = null; refresh(); } else select(id, true);
+});
+document.getElementById('scenario').value = scen;
+document.getElementById('scenario').addEventListener('change', e => {
+  scen = e.target.value; try { localStorage.setItem('lvh-scen', scen); } catch (err) {}
+  refresh();
+});
+document.getElementById('clearpin').addEventListener('click', () => setPin(null));
+document.getElementById('fit').addEventListener('click', fitValley);
+document.getElementById('locate').addEventListener('click', () => {
+  const s = document.getElementById('pinstate');
+  if (!navigator.geolocation) { s.textContent = 'This browser can\'t share location. Click the map instead.'; return; }
+  s.textContent = 'Finding your location…';
+  navigator.geolocation.getCurrentPosition(
+    p => { setPin([p.coords.latitude, p.coords.longitude]); map.flyTo(pin, 12, { duration: .6 }); },
+    () => { s.textContent = 'Location blocked or unavailable (it needs https or localhost). Click the map instead.'; },
+    { enableHighAccuracy: true, timeout: 10000 });
+});
+
+refresh();
+</script>
+</body>
+</html>
