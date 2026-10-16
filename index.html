@@ -144,7 +144,7 @@ dl.kv { display: grid; grid-template-columns: 74px minmax(0,1fr); gap: 4px 8px; 
     </div>
     <div class="foot">
       <span>Designations: <a href="https://media.southernnevadahealthdistrict.org/download/ems/ems-protocol-manual.pdf" target="_blank" rel="noopener">Clark County EMS Protocols (July 1, 2026)</a>, <a href="https://media.southernnevadahealthdistrict.org/download/ems/receiving-hospital-directory.pdf" target="_blank" rel="noopener">SNHD Receiving Hospital Directory (9/22/2026)</a>, <a href="https://www.southernnevadahealthdistrict.org/programs/emergency-medical-services-trauma-system/southern-nevada-trauma-system/" target="_blank" rel="noopener">SNHD Trauma System</a>. Phones are the directory's listings.</span>
-      <span>Marker positions are approximate (within a few blocks); use "Directions" for the exact address. Distances are straight-line. Among eligible trauma centers, SNHD catchment areas decide. Can't ventilate = closest ED.</span>
+      <span>Marker positions are geocoded from each hospital's address via OpenStreetMap. Distances are straight-line. Among eligible trauma centers, SNHD catchment areas decide. Can't ventilate = closest ED.</span>
     </div>
   </aside>
 </main>
@@ -152,26 +152,26 @@ dl.kv { display: grid; grid-template-columns: 74px minmax(0,1fr); gap: 4px 8px; 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
 <script>
 const H = [
-  { id:'umc', name:'UMC', full:'University Medical Center', code:'H-4', area:'Central / Medical District', addr:'1800 W Charleston Blvd, Las Vegas, NV 89102', phone:'(702) 383-2000', ll:[36.1588,-115.1688], trauma:'I', pedsTrauma:true, pedsYellow:true, burn:true, stroke:'nir', peds:true, side:'l',
+  { id:'umc', name:'UMC', full:'University Medical Center', code:'H-4', area:'Central / Medical District', addr:'1800 W Charleston Blvd, Las Vegas, NV 89102', phone:'(702) 383-2000', ll:[36.16021,-115.16775], trauma:'I', pedsTrauma:true, pedsYellow:true, burn:true, stroke:'nir', peds:true, side:'l',
     notes:['Only pediatric trauma center in the valley (Pediatric Level II)','Burn center'] },
-  { id:'valley', name:'Valley', full:'Valley Hospital Medical Center', code:'H-9', area:'Central / Medical District', addr:'620 Shadow Ln, Las Vegas, NV 89106', phone:'(702) 388-4506', ll:[36.1640,-115.1660], stroke:'nir', side:'r' },
-  { id:'sunrise', name:'Sunrise', full:'Sunrise Hospital & Medical Center', code:'H-6', area:'Central / Maryland Pkwy', addr:'3186 S Maryland Pkwy, Las Vegas, NV 89109', phone:'(702) 961-7805', ll:[36.1338,-115.1365], trauma:'I', pedsYellow:true, burn:true, stroke:'nir', peds:true, side:'r',
+  { id:'valley', name:'Valley', full:'Valley Hospital Medical Center', code:'H-9', area:'Central / Medical District', addr:'620 Shadow Ln, Las Vegas, NV 89106', phone:'(702) 388-4506', ll:[36.16345,-115.16661], stroke:'nir', side:'r' },
+  { id:'sunrise', name:'Sunrise', full:'Sunrise Hospital & Medical Center', code:'H-6', area:'Central / Maryland Pkwy', addr:'3186 S Maryland Pkwy, Las Vegas, NV 89109', phone:'(702) 961-7805', ll:[36.13291,-115.13537], trauma:'I', pedsYellow:true, burn:true, stroke:'nir', peds:true, side:'r',
     notes:['Level I trauma since April 2026 (was Level II)','Burn center','Sexual assault patients under 18','Sunrise Children\'s Hospital on campus'] },
-  { id:'summerlin', name:'Summerlin', full:'Summerlin Hospital Medical Center', code:'H-1', area:'West / Summerlin', addr:'657 N Town Center Dr, Las Vegas, NV 89144', phone:'(702) 233-7033', ll:[36.1790,-115.3095], stroke:'yes', peds:true, side:'r' },
-  { id:'mtnview', name:'MountainView', full:'MountainView Hospital', code:'H-11', area:'Northwest', addr:'3100 N Tenaya Way, Las Vegas, NV 89128', phone:'(702) 962-7800', ll:[36.2167,-115.2480], stroke:'yes', side:'r' },
-  { id:'centennial', name:'Centennial Hills', full:'Centennial Hills Hospital', code:'H-19', area:'Far northwest', addr:'6900 N Durango Dr, Las Vegas, NV 89149', phone:'(702) 629-1211', ll:[36.2877,-115.2875], stroke:'nir', side:'r' },
-  { id:'shills', name:'Southern Hills', full:'Southern Hills Hospital', code:'H-16', area:'Southwest', addr:'9300 W Sunset Rd, Las Vegas, NV 89148', phone:'(702) 916-7800', ll:[36.0718,-115.2985], stroke:'nir', side:'l' },
-  { id:'svalley', name:'Spring Valley', full:'Spring Valley Hospital Medical Center', code:'H-15', area:'Southwest', addr:'5400 S Rainbow Blvd, Las Vegas, NV 89118', phone:'(702) 853-3611', ll:[36.0946,-115.2427], stroke:'nir', side:'r' },
-  { id:'sanmartin', name:'San Martin', full:'St. Rose Dominican – San Martin', code:'H-73', area:'Southwest', addr:'8280 W Warm Springs Rd, Las Vegas, NV 89113', phone:'(702) 492-8600', ll:[36.0563,-115.2795], stroke:'yes', side:'r' },
-  { id:'siena', name:'St. Rose Siena', full:'St. Rose Dominican – Siena Campus', code:'H-72', area:'Henderson', addr:'3001 St. Rose Pkwy, Henderson, NV 89052', phone:'(702) 616-6104', ll:[36.0035,-115.1150], trauma:'III', pedsYellow:true, stroke:'nir', peds:true, side:'r',
+  { id:'summerlin', name:'Summerlin', full:'Summerlin Hospital Medical Center', code:'H-1', area:'West / Summerlin', addr:'657 N Town Center Dr, Las Vegas, NV 89144', phone:'(702) 233-7033', ll:[36.18119,-115.31694], stroke:'yes', peds:true, side:'r' },
+  { id:'mtnview', name:'MountainView', full:'MountainView Hospital', code:'H-11', area:'Northwest', addr:'3100 N Tenaya Way, Las Vegas, NV 89128', phone:'(702) 962-7800', ll:[36.21564,-115.24914], stroke:'yes', side:'r' },
+  { id:'centennial', name:'Centennial Hills', full:'Centennial Hills Hospital', code:'H-19', area:'Far northwest', addr:'6900 N Durango Dr, Las Vegas, NV 89149', phone:'(702) 629-1211', ll:[36.28636,-115.28548], stroke:'nir', side:'r' },
+  { id:'shills', name:'Southern Hills', full:'Southern Hills Hospital', code:'H-16', area:'Southwest', addr:'9300 W Sunset Rd, Las Vegas, NV 89148', phone:'(702) 916-7800', ll:[36.07217,-115.29539], stroke:'nir', side:'l' },
+  { id:'svalley', name:'Spring Valley', full:'Spring Valley Hospital Medical Center', code:'H-15', area:'Southwest', addr:'5400 S Rainbow Blvd, Las Vegas, NV 89118', phone:'(702) 853-3611', ll:[36.09062,-115.24064], stroke:'nir', side:'r' },
+  { id:'sanmartin', name:'San Martin', full:'St. Rose Dominican – San Martin', code:'H-73', area:'Southwest', addr:'8280 W Warm Springs Rd, Las Vegas, NV 89113', phone:'(702) 492-8600', ll:[36.05742,-115.27188], stroke:'yes', side:'r' },
+  { id:'siena', name:'St. Rose Siena', full:'St. Rose Dominican – Siena Campus', code:'H-72', area:'Henderson', addr:'3001 St. Rose Pkwy, Henderson, NV 89052', phone:'(702) 616-6104', ll:[36.00464,-115.1153], trauma:'III', pedsYellow:true, stroke:'nir', peds:true, side:'r',
     notes:['Level III adult trauma; peds Yellow OK'] },
-  { id:'whenderson', name:'West Henderson', full:'West Henderson Hospital', code:'H-28', area:'Henderson (west)', addr:'1155 Raiders Way, Henderson, NV 89052', phone:'(725) 235-2100', ll:[35.9955,-115.1590], stroke:'yes', side:'l' },
-  { id:'henderson', name:'Henderson Hospital', full:'Henderson Hospital', code:'H-18', area:'Henderson (east)', addr:'1050 W Galleria Dr, Henderson, NV 89011', phone:'(702) 963-7100', ll:[36.0588,-114.9783], stroke:'nir', side:'r' },
-  { id:'nvista', name:'North Vista', full:'North Vista Hospital', code:'H-5', area:'North Las Vegas', addr:'1409 E Lake Mead Blvd, North Las Vegas, NV 89030', phone:'(702) 649-7711', ll:[36.1955,-115.1250], side:'r' },
-  { id:'mommc', name:'Mike O\'Callaghan', full:'Mike O\'Callaghan Military Medical Center', code:'H-3', area:'Nellis AFB', addr:'4700 N Las Vegas Blvd, Nellis AFB, NV 89191', phone:'(702) 653-2344', ll:[36.2425,-115.0470], trauma:'III', side:'r',
+  { id:'whenderson', name:'West Henderson', full:'West Henderson Hospital', code:'H-28', area:'Henderson (west)', addr:'1155 Raiders Way, Henderson, NV 89052', phone:'(725) 235-2100', ll:[35.97991,-115.14902], stroke:'yes', side:'l' },
+  { id:'henderson', name:'Henderson Hospital', full:'Henderson Hospital', code:'H-18', area:'Henderson (east)', addr:'1050 W Galleria Dr, Henderson, NV 89011', phone:'(702) 963-7100', ll:[36.07276,-115.03], stroke:'nir', side:'r' },
+  { id:'nvista', name:'North Vista', full:'North Vista Hospital', code:'H-5', area:'North Las Vegas', addr:'1409 E Lake Mead Blvd, North Las Vegas, NV 89030', phone:'(702) 649-7711', ll:[36.19508,-115.12214], side:'r' },
+  { id:'mommc', name:'Mike O\'Callaghan', full:'Mike O\'Callaghan Military Medical Center', code:'H-3', area:'Nellis AFB', addr:'4700 N Las Vegas Blvd, Nellis AFB, NV 89191', phone:'(702) 653-2344', ll:[36.24597,-115.04901], trauma:'III', side:'r',
     notes:['Level III adult trauma (military hospital on Nellis AFB)'] },
-  { id:'boulder', name:'Boulder City', full:'Boulder City Hospital', code:'H-8', area:'Boulder City', addr:'901 Adams Blvd, Boulder City, NV 89005', phone:'(702) 293-4111', ll:[35.9770,-114.8395], side:'l' },
-  { id:'mesaview', name:'Mesa View', full:'Mesa View Regional Hospital', code:'H-75', area:'Mesquite (~80 mi NE)', addr:'1299 Bertha Howe Ave, Mesquite, NV 89027', phone:'(702) 346-8040', ll:[36.8060,-114.0950], side:'r', far:true }
+  { id:'boulder', name:'Boulder City', full:'Boulder City Hospital', code:'H-8', area:'Boulder City', addr:'901 Adams Blvd, Boulder City, NV 89005', phone:'(702) 293-4111', ll:[35.96743,-114.8427], side:'l' },
+  { id:'mesaview', name:'Mesa View', full:'Mesa View Regional Hospital', code:'H-75', area:'Mesquite (~80 mi NE)', addr:'1299 Bertha Howe Ave, Mesquite, NV 89027', phone:'(702) 346-8040', ll:[36.80977,-114.11607], side:'r', far:true }
 ];
 
 const SCEN = {
